@@ -1,0 +1,100 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap");
+
+
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    font-family: "Poppins", "sans-serif"
+}
+
+body {
+    background-color: #ffffff;
+}
+
+.container {
+    justify-content: center;
+    display: flex;
+}
+
+.card {
+    background: #ffffff;
+    width: 250px;
+    box-shadow: 0 1rem 2rem -1rem #0a1424;
+    margin: 10px;
+    border-radius: 18px;
+    margin-right: 5px;
+}
+
+.card:hover {
+    cursor: pointer;
+    background-color: #ffffff;
+    color: aliceblue;
+    transform: scale(1.03);
+    transition: all 0.5s ease-in-out;
+}
+
+.card-image {
+    background-color: #4b4b4b;
+    height: 300px;
+    margin-bottom: 15px;
+    background-size: cover;
+}
+
+.img1 {
+    background-image: url('Cat1.png');
+}
+
+.img2 {
+    background-image: url('Cat2.png');
+}
+
+.img3 {
+    background-image: url('Cat3.png');
+}
+
+.img4 {
+    background-image: url('Cat4.png');
+}
+
+.img5 {
+    background-image: url('Cat5.png');
+}
+
+.img6 {
+    background-image: url('Cat6.png');
+}
+
+.img7 {
+    background-image: url('Cat7.png');
+}
+
+.img8 {
+    background-image: url('Cat8.png');
+}
+
+.img9 {
+    background-image: url('Cat9.png');
+}
+
+.img10 {
+    background-image: url('Cat10.png');
+}
+
+.h2 {
+    padding: 10px;
+}
+
+.p {
+    padding: 10px;
+}
+
+.a {
+    background-color: #4b4b4b;
+    color: aliceblue;
+    padding: 15px 20px;
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    margin: 30px 50px;
+}
