@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine's Quest: Pink Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --bg-color: #ffe6ea;
+            --gb-body: #ff9aa2;
+            --gb-bezel: #590d22;
+            --screen-bg: #ffc2d1;
+            --pixel-dark: #590d22;
+            --pixel-light: #ffc2d1;
+            --accent: #ff0a54;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- Game Screen --- */
+        .game-boy {
+            width: 700px;
+            height: 600px; 
+            background: var(--gb-body);
+            border-radius: 10px 10px 40px 10px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(100, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .screen-border {
+            background: var(--gb-bezel);
+            padding: 30px 30px 50px 30px;
+            border-radius: 10px 10px 30px 10px;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .screen {
+            background-color: var(--screen-bg);
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out;
+            width: 100%;
+            height: 400px; 
+            border: 4px solid var(--pixel-dark);
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 5px 5px 10px rgba(0,0,0,0.1);
+        }
+        
+        .screen-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(255, 194, 209, 0.2); 
+            pointer-events: none; z-index: 1;
+        }
+
+        /* --- INVENTORY STYLES --- */
+        .inventory-screen {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 15; flex-direction: column; padding: 20px; box-sizing: border-box;
+            background: rgba(255, 194, 209, 0.95);
+        }
+
+        .inv-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            overflow-y: auto;
+            max-height: 280px;
+        }
+
+        .inv-item {
+            border: 4px solid var(--pixel-dark);
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--pixel-dark);
+            transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .inv-item:hover { background: var(--pixel-dark); color: var(--screen-bg); transform: translateY(-2px); }
+        .inv-icon { font-size: 30px; margin-bottom: 10px; display: block; }
+        .inv-name { font-size: 10px; line-height: 1.5; }
+
+        /* --- TYCOON MINI-GAME STYLES --- */
+        .tycoon-screen {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 15; flex-direction: column;
+            color: var(--pixel-dark);
+            /* CHANGED: Reverted to solid semi-transparent pink */
+            background: rgba(255, 194, 209, 0.95);
+        }
+
+        .ty-header {
+            background: var(--pixel-dark);
+            color: var(--screen-bg); padding: 10px;
+            display: flex; justify-content: space-between; font-size: 10px;
+            border-bottom: 4px solid rgba(0,0,0,0.1);
+        }
+
+        .ty-content { display: flex; flex: 1; overflow: hidden; }
+
+        .ty-clicker-area {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border-right: 4px solid var(--pixel-dark);
+        }
+
+        .big-heart-btn {
+            font-size: 60px; color: var(--accent); cursor: pointer;
+            transition: transform 0.1s; user-select: none;
+            text-shadow: 4px 4px 0px white, -2px -2px 0px rgba(0,0,0,0.1);
+        }
+        .big-heart-btn:active { transform: scale(0.9); }
+
+        .ty-shop-area {
+            flex: 1; 
+            background: rgba(255, 255, 255, 0.2); 
+            overflow-y: auto; padding: 10px;
+        }
+
+        .upgrade-item {
+            background: var(--pixel-dark); color: var(--screen-bg); padding: 8px; margin-bottom: 8px;
+            font-size: 8px; cursor: pointer; border: 2px solid transparent;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+        .upgrade-item:hover { border-color: var(--accent); background: #7a1230; }
+        .upgrade-item.disabled { opacity: 0.6; cursor: not-allowed; background: #444; }
+
+        .ty-back-btn {
+            position: absolute; bottom: 10px; left: 10px;
+            padding: 8px; background: var(--pixel-dark); color: white; font-size: 8px; border: none; cursor: pointer;
+            box-shadow: 3px 3px 0px white;
+        }
+
+        /* --- LOVE METER (HP BAR) --- */
+        .hp-container {
+            position: absolute; top: 15px; left: 15px; display: flex; align-items: center; z-index: 5;
+        }
+        .hp-label { font-size: 10px; color: var(--pixel-dark); margin-right: 8px; font-weight: bold; text-shadow: 1px 1px 0px white; }
+        .hp-border { width: 150px; height: 15px; border: 3px solid var(--pixel-dark); background: white; padding: 1px; }
+        .hp-fill { width: 0%; height: 100%; background-color: var(--accent); transition: width 0.5s ease-out; }
+
+        /* --- Game Elements --- */
+        .pixel-heart { position: absolute; font-size: 20px; color: var(--pixel-dark); opacity: 0.2; animation: floatUp 4s infinite linear; z-index: 2; }
+        
+        .hero {
+            width: 50px; height: 50px; background: var(--pixel-dark); position: absolute; bottom: 40px; left: 50px;
+            box-shadow: 4px 0 var(--pixel-dark), -4px 0 var(--pixel-dark), 0 -4px var(--pixel-dark), 0 4px var(--pixel-dark); 
+            animation: breathe 2s infinite; cursor: pointer; transition: transform 0.1s; z-index: 3;
+        }
+        .hero::after { content: ''; position: absolute; top: 15px; left: 10px; width: 8px; height: 8px; background: var(--screen-bg); box-shadow: 22px 0 var(--screen-bg); }
+        .hero:active { transform: scale(0.9); }
+        
+        .crush {
+            width: 50px; height: 50px; background: var(--pixel-dark); position: absolute; bottom: 40px; right: 50px;
+            box-shadow: 4px 0 var(--pixel-dark), -4px 0 var(--pixel-dark), 0 -4px var(--pixel-dark), 0 4px var(--pixel-dark); 
+            animation: breathe 2.1s infinite; z-index: 3;
+        }
+        .crush::before { content: '❤️'; position: absolute; top: -30px; left: 10px; font-size: 20px; color: var(--pixel-dark); animation: bounce 1s infinite; }
+
+        /* --- UI Elements --- */
+        .dialogue-box {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100px;
+            background: var(--pixel-dark); color: var(--screen-bg); 
+            border-top: 4px solid var(--pixel-dark);
+            padding: 15px; box-sizing: border-box; font-size: 12px; line-height: 1.5;
+            display: none; z-index: 5;
+        }
+        .start-btn-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            background: rgba(255, 194, 209, 0.9); z-index: 10;
+        }
+        .start-btn-overlay h1 { color: var(--pixel-dark); text-shadow: 2px 2px 0px white; }
+
+        .blink { animation: blinker 1s linear infinite; }
+        
+        .quest-menu {
+            display: none; position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+            width: 80%; background: #fff; border: 4px solid var(--pixel-dark); padding: 20px;
+            text-align: center; color: var(--pixel-dark); z-index: 20; box-shadow: 5px 5px 0px var(--pixel-dark);
+        }
+        .quest-menu h1 { font-size: 18px; margin-top: 0; margin-bottom: 20px; line-height: 1.4; }
+        .quest-menu p { font-size: 12px; line-height: 2; margin-bottom: 20px; }
+        
+        .btn-group { margin-top: 10px; display: flex; justify-content: center; gap: 20px; }
+        button {
+            font-family: 'Press Start 2P', cursive; padding: 12px 15px;
+            background: var(--pixel-dark); color: var(--screen-bg); border: none; cursor: pointer;
+            margin: 5px; font-size: 12px; 
+        }
+        button:hover { background: var(--accent); color: white; }
+        #noBtn { position: relative; }
+
+        /* --- Memory Gallery --- */
+        .memory-gallery {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 194, 209, 0.95); z-index: 15; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .memory-frame {
+            width: 90%; height: 75%; border: 4px solid var(--pixel-dark);
+            margin-bottom: 10px; background: #000; 
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .memory-frame img { width: 100%; height: 100%; object-fit: contain; }
+        .memory-caption { color: var(--pixel-dark); font-size: 12px; margin-bottom: 15px; text-align: center; height: 20px; }
+        .gallery-controls { display: flex; gap: 10px; }
+
+        /* --- Animations --- */
+        @keyframes blinker { 50% { opacity: 0; } }
+        @keyframes breathe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes floatUp { from { transform: translateY(300px); } to { transform: translateY(-50px); } }
+    </style>
+</head>
+<body>
+
+    <div class="game-boy">
+        <div class="screen-border">
+            <div class="screen" id="gameScreen">
+                
+                <div class="screen-overlay"></div>
+
+                <div class="hp-container" id="hpContainer">
+                    <span class="hp-label">LOVE:</span>
+                    <div class="hp-border"><div class="hp-fill" id="hpFill"></div></div>
+                </div>
+
+                <div class="inventory-screen" id="inventoryScreen">
+                    <h2 style="text-align:center; font-size:12px; color:#590d22; margin-bottom:10px;">INVENTORY (COUPONS)</h2>
+                    <div style="text-align:center; font-size:8px; color:#590d22;">Click an item to redeem!</div>
+                    <div class="inv-grid" id="invGrid"></div>
+                    <button class="ty-back-btn" onclick="closeInventory()">EXIT MENU</button>
+                </div>
+
+                <div class="tycoon-screen" id="tycoonScreen">
+                    <div class="ty-header">
+                        <span>LOVE BYTES: <span id="tyScore">0</span></span>
+                        <span>PER SEC: <span id="tyRate">0</span></span>
+                    </div>
+                    <div class="ty-content">
+                        <div class="ty-clicker-area">
+                            <div class="big-heart-btn" onclick="clickHeart()">♥</div>
+                            <div style="font-size:8px; margin-top:20px; color:#590d22; font-weight:bold;">CLICK ME!</div>
+                            <button class="ty-back-btn" onclick="closeTycoon()">EXIT</button>
+                        </div>
+                        <div class="ty-shop-area" id="tyShop"></div>
+                    </div>
+                </div>
+                
+                <div class="pixel-heart" style="left: 20%; animation-delay: 0s;">♥</div>
+                <div class="pixel-heart" style="left: 70%; animation-delay: 2s;">♥</div>
+                <div class="hero" id="hero" onclick="pokeHero()"></div>
+                <div class="crush" id="crush"></div>
+
+                <div class="dialogue-box" id="dialogueBox" onclick="nextDialogue()">
+                    <span id="textTarget"></span>
+                    <span class="blink">▼</span>
+                </div>
+
+                <div class="quest-menu" id="questMenu">
+                    <p>QUEST: Be My Girlfriend?</p>
+                    <div class="btn-group">
+                        <button onclick="questComplete()">YES</button>
+                        <button id="noBtn" onmouseover="moveButton()">NO</button>
+                    </div>
+                </div>
+
+                <div class="memory-gallery" id="memoryGallery">
+                    <div class="memory-frame"><img id="memImg" src="" alt="Memory"></div>
+                    <div class="memory-caption" id="memCap">Loading...</div>
+                    <div class="gallery-controls">
+                        <button onclick="changeMemory(-1)">◄</button>
+                        <button onclick="closeMemories()">BACK</button>
+                        <button onclick="changeMemory(1)">►</button>
+                    </div>
+                </div>
+
+                <div class="start-btn-overlay" id="startOverlay">
+                    <h1 style="margin-bottom: 30px; font-size: 20px;">VALENTINE RPG</h1>
+                    <button onclick="startGame()">START QUEST</button>
+                    <button onclick="openMemories()">VIEW MEMORIES</button>
+                    <div style="margin-top:10px; display:flex; gap:10px;">
+                        <button onclick="openTycoon()">MINI-GAME</button>
+                        <button onclick="openInventory()">INVENTORY</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 10px; color: #590d22; font-size: 10px;">
+            Your nerd's confession &copy; 2026
+        </div>
+    </div>
+
+    <script>
+        /* --- BACKGROUND CONFIGURATION --- */
+        const backgrounds = {
+            start:     "https://media.discordapp.net/attachments/734065048191762432/1463109587786797117/image.png", 
+            quest:     "https://media.discordapp.net/attachments/734065048191762432/1463109587786797117/image.png",
+            // REMOVED TYCOON WALLPAPER TO KEEP IT CLEAN
+            inventory: "https://via.placeholder.com/800/ffe6ea/590d22?text=Inventory+BG",
+            memories:  "https://via.placeholder.com/800/ff9aa2/590d22?text=Gallery+BG" 
+        };
+
+        function setBg(key) {
+            const screen = document.getElementById('gameScreen');
+            if (backgrounds[key]) {
+                screen.style.backgroundImage = `url('${backgrounds[key]}')`;
+            }
+        }
+        
+        setBg('start');
+
+        /* --- CONFIGURATION --- */
+        const story = [
+            "Valentine's Finally Here!",
+            "Time sure flies by since we first met",
+            "Even after all this time I still feel the same way about you",
+            "I feel so lucky to have you in my life",
+            "Your presence alone brightens my days",
+            "You make me want to be a better person",
+            "You make me want to fight harder for you, for my dreams",
+            "And as you probably expect... I have something to ask you.",
+            "Will you be my girlfriend?"
+        ];
+
+        const memories = [
+            { src: "https://media.discordapp.net/attachments/734065048191762432/1463109587786797117/image.png?ex=6970a27c&is=696f50fc&hm=dbf0cccdb0aae8c253863d9e0100e85bba2891cb6fea726ad2881d5bb086c783&=&format=webp&quality=lossless", label: "Sesuai janji yaaa" },
+            { src: "https://media.discordapp.net/attachments/734065048191762432/1463109950728306832/RobloxScreenShot20260119_213312956.png?ex=6970a2d3&is=696f5153&hm=72870d1365f63b93f2f8a4524e241dd1f8563ed281acdfb0a02d3344186fce38&=&format=webp&quality=lossless&width=1677&height=1023", label: "That one Roblox horror game" },
+            { src: "https://media.discordapp.net/attachments/1183430819944079410/1462459874595176521/Screenshot_2026-01-18-21-50-23-253_com.mobile.legends.jpg?ex=69703fa5&is=696eee25&hm=c42cc13d9cef31e9cb44e0718460453e2c198fd5c0f8981b5de66484c2d1bd83&=&format=webp", label: "Masih inget Lylia jungler? wkwkwk" }
+        ];
+
+        const items = [
+            { icon: "🎬", name: "Movie Night Ticket", desc: "Redeem for 1 Movie Date of your choice." },
+            { icon: "🍔", name: "Food Voucher", desc: "Redeem for 1 Free Meal (I pay!)." },
+            { icon: "🕊️", name: "Forgiveness Card", desc: "Use to instantly win 1 argument." },
+            { icon: "🎮", name: "Gamer Pass", desc: "I will play any game you want for 2 hours." }
+        ];
+
+        /* --- TYCOON DATA --- */
+        let hearts = 0;
+        let hps = 0; 
+        const upgrades = [
+            { id: 0, name: "Text Message", cost: 15, rate: 1, count: 0 },
+            { id: 1, name: "Send Meme", cost: 50, rate: 5, count: 0 },
+            { id: 2, name: "Video Call", cost: 150, rate: 15, count: 0 },
+            { id: 3, name: "Buy Flowers", cost: 500, rate: 50, count: 0 },
+            { id: 4, name: "Write Code", cost: 1000, rate: 100, count: 0 }
+        ];
+        let tycoonInterval = null;
+
+        /* --- STATE VARIABLES --- */
+        let lineIndex = 0;
+        let isTyping = false;
+        let audioCtx = null;
+        let currentMemIndex = 0;
+
+        /* --- AUDIO SYSTEM --- */
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+
+        function playBeep(frequency = 440, duration = 0.1, type = 'square') {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = frequency;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime); 
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playWinSound() {
+            if (!audioCtx) return;
+            let notes = [523, 659, 783, 1046];
+            notes.forEach((note, i) => setTimeout(() => playBeep(note, 0.2, 'triangle'), i * 150));
+        }
+
+        /* --- MAIN UI & GAMEPLAY --- */
+        const textTarget = document.getElementById('textTarget');
+        const dialogueBox = document.getElementById('dialogueBox');
+        const questMenu = document.getElementById('questMenu');
+        const startOverlay = document.getElementById('startOverlay');
+        const noBtn = document.getElementById('noBtn');
+        const memoryGallery = document.getElementById('memoryGallery');
+        const memImg = document.getElementById('memImg');
+        const memCap = document.getElementById('memCap');
+        const hpFill = document.getElementById('hpFill');
+        const tycoonScreen = document.getElementById('tycoonScreen');
+        const tyScore = document.getElementById('tyScore');
+        const tyRate = document.getElementById('tyRate');
+        const tyShop = document.getElementById('tyShop');
+        const inventoryScreen = document.getElementById('inventoryScreen');
+        const invGrid = document.getElementById('invGrid');
+        
+        const hpContainer = document.getElementById('hpContainer');
+        const hero = document.getElementById('hero');
+        const crush = document.getElementById('crush');
+
+        function startGame() {
+            initAudio();
+            playBeep(600, 0.1);
+            setBg('quest'); 
+            startOverlay.style.display = 'none';
+            dialogueBox.style.display = 'block';
+            hpFill.style.width = "10%"; 
+            typeWriter(story[lineIndex]);
+        }
+
+        /* --- INVENTORY LOGIC --- */
+        function openInventory() {
+            initAudio(); playBeep(400, 0.1);
+            setBg('inventory'); 
+            startOverlay.style.display = 'none';
+            inventoryScreen.style.display = 'flex';
+            
+            hpContainer.style.display = 'none';
+            hero.style.display = 'none';
+            crush.style.display = 'none';
+            
+            renderInventory();
+        }
+
+        function closeInventory() {
+            playBeep(300, 0.1);
+            setBg('start'); 
+            inventoryScreen.style.display = 'none';
+            startOverlay.style.display = 'flex';
+            
+            hpContainer.style.display = 'flex';
+            hero.style.display = 'block';
+            crush.style.display = 'block';
+        }
+
+        function renderInventory() {
+            invGrid.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'inv-item';
+                div.innerHTML = `
+                    <span class="inv-icon">${item.icon}</span>
+                    <span class="inv-name">${item.name}</span>
+                `;
+                div.onclick = () => {
+                    playBeep(600, 0.1, 'sine');
+                    alert(`ITEM INFO:\n\n${item.name}\n${item.desc}\n\n(Take a screenshot to redeem this!)`);
+                };
+                invGrid.appendChild(div);
+            });
+        }
+
+        /* --- TYCOON LOGIC --- */
+        function openTycoon() {
+            initAudio();
+            playBeep(400, 0.1);
+            // REMOVED SETBG CALL
+            startOverlay.style.display = 'none';
+            tycoonScreen.style.display = 'flex';
+            
+            hpContainer.style.display = 'none';
+            hero.style.display = 'none';
+            crush.style.display = 'none';
+
+            renderShop();
+            if(!tycoonInterval) tycoonInterval = setInterval(tycoonLoop, 1000);
+        }
+
+        function closeTycoon() {
+            playBeep(300, 0.1);
+            setBg('start'); 
+            tycoonScreen.style.display = 'none';
+            startOverlay.style.display = 'flex';
+            
+            hpContainer.style.display = 'flex';
+            hero.style.display = 'block';
+            crush.style.display = 'block';
+        }
+
+        function clickHeart() {
+            hearts++;
+            playBeep(800, 0.05, 'triangle'); 
+            updateTycoonUI();
+        }
+
+        function buyUpgrade(id) {
+            let item = upgrades[id];
+            if(hearts >= item.cost) {
+                hearts -= item.cost;
+                item.count++;
+                item.cost = Math.floor(item.cost * 1.5); 
+                hps += item.rate;
+                playBeep(200, 0.1, 'square'); 
+                updateTycoonUI();
+                renderShop();
+            } else {
+                playBeep(100, 0.1, 'sawtooth'); 
+            }
+        }
+
+        function tycoonLoop() {
+            hearts += hps;
+            updateTycoonUI();
+            renderShop(); 
+        }
+
+        function updateTycoonUI() {
+            tyScore.innerText = hearts;
+            tyRate.innerText = hps;
+        }
+
+        function renderShop() {
+            tyShop.innerHTML = '';
+            upgrades.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `upgrade-item ${hearts < item.cost ? 'disabled' : ''}`;
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold; margin-bottom:4px;">${item.name}</div>
+                        <div>+${item.rate}/s | Own: ${item.count}</div>
+                    </div>
+                    <div style="color:${hearts >= item.cost ? '#8fb800' : '#d63384'}">
+                        ${item.cost} ♥
+                    </div>
+                `;
+                div.onclick = () => buyUpgrade(item.id);
+                tyShop.appendChild(div);
+            });
+        }
+
+        /* --- MEMORY LOGIC --- */
+        function openMemories() {
+            initAudio(); playBeep(400, 0.1);
+            setBg('memories'); 
+            startOverlay.style.display = 'none';
+            memoryGallery.style.display = 'flex';
+            
+            hpContainer.style.display = 'none';
+            hero.style.display = 'none';
+            crush.style.display = 'none';
+            
+            currentMemIndex = 0; updateMemory();
+        }
+        function closeMemories() {
+            playBeep(300, 0.1);
+            setBg('start'); 
+            memoryGallery.style.display = 'none';
+            startOverlay.style.display = 'flex';
+            
+            hpContainer.style.display = 'flex';
+            hero.style.display = 'block';
+            crush.style.display = 'block';
+        }
+        function changeMemory(d) {
+            playBeep(200, 0.05);
+            currentMemIndex += d;
+            if (currentMemIndex < 0) currentMemIndex = memories.length - 1;
+            if (currentMemIndex >= memories.length) currentMemIndex = 0;
+            updateMemory();
+        }
+        function updateMemory() {
+            memImg.src = memories[currentMemIndex].src;
+            memCap.innerText = memories[currentMemIndex].label;
+        }
+
+        /* --- RPG LOGIC --- */
+        function typeWriter(text) {
+            isTyping = true; textTarget.innerHTML = ''; let i = 0;
+            function type() {
+                if (i < text.length) {
+                    textTarget.innerHTML += text.charAt(i); i++;
+                    if (i % 2 === 0) playBeep(200, 0.05); 
+                    setTimeout(type, 50);
+                } else { isTyping = false; }
+            } type();
+        }
+
+        function nextDialogue() {
+            if (isTyping) return;
+            playBeep(400, 0.1);
+            lineIndex++;
+            let progress = (lineIndex / story.length) * 100;
+            if (progress > 100) progress = 100;
+            hpFill.style.width = progress + "%";
+
+            if (lineIndex < story.length) {
+                typeWriter(story[lineIndex]);
+            } else {
+                hpFill.style.width = "100%";
+                dialogueBox.style.display = 'none';
+                questMenu.style.display = 'block';
+                playBeep(800, 0.3, 'triangle');
+            }
+        }
+
+        function moveButton() {
+            playBeep(150, 0.1, 'sawtooth');
+            const x = Math.random() * 150 - 75;
+            const y = Math.random() * 100 - 50;
+            noBtn.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        function questComplete() {
+            playWinSound();
+            questMenu.innerHTML = `
+                <h1>QUEST COMPLETE!</h1>
+                <p>You've succesfully made your nerd very happy!<br>I hope you liked this way of me confessing</p>
+                <button onclick="location.reload()">BACK TO MENU</button>
+            `;
+            for(let i=0; i<50; i++) createConfetti();
+        }
+
+        function createConfetti() {
+            const conf = document.createElement('div');
+            conf.innerHTML = ['♥', '★', '♦'][Math.floor(Math.random()*3)];
+            conf.style.position = 'absolute';
+            conf.style.color = Math.random() > 0.5 ? '#d63384' : '#fff';
+            conf.style.left = Math.random() * 100 + '%';
+            conf.style.top = '-10px';
+            conf.style.animation = `floatUp ${Math.random()*2+1}s linear`;
+            document.getElementById('gameScreen').appendChild(conf);
+        }
+
+        /* --- EASTER EGGS --- */
+        let pokeCount = 0;
+        function pokeHero() {
+            playBeep(300, 0.1); pokeCount++;
+            const hero = document.getElementById('hero');
+            hero.style.transform = "translateY(-10px)";
+            setTimeout(() => hero.style.transform = "translateY(0)", 200);
+            if(pokeCount === 5) alert("Hey! Stop poking me and focus on the quest!");
+        }
+
+        let kCode = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+        let kIdx = 0;
+        document.addEventListener('keydown', (e) => {
+            if (e.keyCode === kCode[kIdx]) {
+                kIdx++; if (kIdx === kCode.length) { activateCheatMode(); kIdx = 0; }
+            } else { kIdx = 0; }
+        });
+
+        function activateCheatMode() {
+            playWinSound(); document.body.classList.add('love-mode');
+            alert("CHEAT CODE ACTIVATED: Infinite Love Mode ON");
+        }
+    </script>
+</body>
+</html>
